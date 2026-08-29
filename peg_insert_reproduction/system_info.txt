@@ -1,0 +1,30 @@
+Mon Aug 24 22:54:03 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 580.173.02             Driver Version: 580.173.02     CUDA Version: 13.0     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 4060 ...    Off |   00000000:01:00.0  On |                  N/A |
+| N/A   48C    P3             10W /   55W |     890MiB /   8188MiB |      5%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A            2793      G   /usr/lib/xorg/Xorg                      416MiB |
+|    0   N/A  N/A            3010      G   /usr/bin/gnome-shell                     59MiB |
+|    0   N/A  N/A            3204      G   .../sunloginclient --cmd=autorun         11MiB |
+|    0   N/A  N/A            3480      G   ...me/58.0.3029.81 Safari/537.36          2MiB |
+|    0   N/A  N/A            3545      G   ...E4A64445C0CF383BD2B980E7EF463          7MiB |
+|    0   N/A  N/A            3588      G   ...exec/xdg-desktop-portal-gnome          2MiB |
+|    0   N/A  N/A            5109      G   /usr/bin/bucd                            21MiB |
+|    0   N/A  N/A            5255      G   ...ns-seed-version --log-level=2         20MiB |
+|    0   N/A  N/A            5921      G   ...rack-uuid=3190708988185955192         67MiB |
+|    0   N/A  N/A            7788      G   ...144 --variations-seed-version        119MiB |
+|    0   N/A  N/A           12778      G   /usr/bin/nautilus                        11MiB |
++-----------------------------------------------------------------------------------------+
