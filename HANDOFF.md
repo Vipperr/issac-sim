@@ -2,22 +2,18 @@
 
 更新时间：2026-09-02（Asia/Shanghai）
 
-## 1. 现在在做什么
+## 现在在做什么
 
-官方 `Isaac-Factory-PegInsert-Direct-v0` PPO baseline 的复现、定量评估、回放验收和本地归档均已完成。
+官方 `Isaac-Factory-PegInsert-Direct-v0` PPO baseline 已完成复现、跨随机种子评估、人工回放验收和本地归档。刚完成三条“首次成功即结束”的近景回放，解决了原 `--video_length 200` 视频会跨 episode、机械臂归位后再次插孔的问题。
 
-当前唯一未完成的收尾事项是将已有本地 Git 提交推送到 GitHub：提交已创建，但当前环境没有 GitHub HTTPS 凭据，`git push origin main` 尚未成功。
+当前没有云端训练、评估或录制任务在运行。下一项实际工作应是将本地提交推送到 GitHub；由于本环境没有 GitHub HTTPS 凭据，尚未推送。
 
-不要重复训练；云端没有待完成的训练或评估任务。后续工作应在此 baseline 基础上开展泛化/消融实验，或进入受控的真机验证。
+## 已完成哪些
 
-## 2. 已完成事项
+### 训练与评估
 
-### 训练与复现
-
-- 固定 Isaac Lab `v2.3.2`，提交 `37ddf626871758333d6ed89cf64ad702aef127d0`。
-- 云端 RTX 4090（24 GB）上完成三个独立训练 seed（`0`、`1`、`2`）。
-- 每轮使用官方 RL-Games PPO 配置：128 环境、200 epoch、horizon 128、minibatch 512。
-- Factory task、奖励函数、控制器、网络和 PPO 参数均未修改。
+- 固定 Isaac Lab `v2.3.2`，commit `37ddf626871758333d6ed89cf64ad702aef127d0`；使用云端 RTX 4090（24 GB）。
+- 使用官方 RL-Games PPO 配置完成 3 个训练 seed：128 环境、200 epoch、horizon 128、minibatch 512。未改动 Factory 任务、奖励、控制器、网络或 PPO 参数。
 
 | 训练 seed | 最终 reward | 训练时间 |
 | --- | ---: | ---: |
@@ -26,11 +22,7 @@
 | 2 | 364.90952 | 6,276.39 s（104.61 min） |
 | 均值 ± 样本标准差 | 365.52 ± 4.89 | 6,342.18 ± 149.01 s（105.70 ± 2.48 min） |
 
-### 定量评估
-
-- 新增专用评估脚本，加载最终 checkpoint 并用确定性策略计算 Factory 原生 `infos["successes"]`。
-- 每个训练 seed 在 5 个未参与训练的评估 seed（`1000`–`1004`）上评估；每个组合 128 环境、1024 episode。
-- 共完成 15 个组合、15,360 episode；成功 15,077 个，合并成功率为 98.16%。
+- 每个训练 seed 在未参与训练的评估 seed `1000`–`1004` 上评估 1,024 episode，共 15,360 episode。
 
 | 训练 seed | 成功数 / 5,120 | 成功率 | 平均首次成功时间 |
 | --- | ---: | ---: | ---: |
@@ -39,129 +31,83 @@
 | 2 | 5,068 | 98.98% ± 0.27% | 1.90 ± 0.04 s |
 | 跨训练 seed | 15,077 / 15,360 | 98.16% ± 0.91% | 1.86 ± 0.06 s |
 
-最后一行的标准差在三个训练 seed 的平均表现上计算；每个训练 seed 行内的标准差在五个评估 seed 上计算。
+### 视频回放
 
-### 回放与人工验收
+- 已人工检查默认回放；随后因相机过远，用近景相机重新录制。
+- 新增专用录制脚本：从 reset 开始用确定性策略推理，检测 Factory 原生 `infos["logs_rew_curr_success"]`；第一次成功即停止。若任务失败，才在原生 timeout 停止。
+- 三条新视频均为单环境、`eval_seed=1000`、1280×720 H.264；没有跨入第二个 episode。
 
-- 三个最终 checkpoint 已在 `eval_seed=1000`、单环境、200 控制步条件下录制 headless 视频。
-- 初版视频已人工检查，未发现异常动作；因默认相机过远，已用近景相机重新录制当前三段视频。
-- 当前视频使用 `env.viewer.eye=[2.0,2.0,1.5]`、`env.viewer.lookat=[0.5,0.0,0.5]`，机械臂和工作台占据画面主体。
+| checkpoint seed | 首次成功步 | 时长 | 本地 SHA-256 |
+| --- | ---: | ---: | --- |
+| 0 | 22 | 1.47 s | `4a4599037692879f96f9e86ae5e6313764d58b32d2747a70d4cfa509ae05ff86` |
+| 1 | 23 | 1.53 s | `f0de978d37e3ce3827ad1a7621500b9c4a2a10420aa23c3ad2f78d3f690f3bc5` |
+| 2 | 22 | 1.47 s | `7f612aba5ca3e45ce129f4d730df91996605c32ec83abd8a6ced437f3270596a` |
+
+- 上述三条视频均已从云端同步到本机，并与云端 SHA-256 逐一一致。
 
 ### 归档与报告
 
-- 云端最终 checkpoint、全部日志、15 个评估 JSON、视频、报告和评估脚本均已同步到本地。
-- 本地归档包含 60 个文件、约 612 MB；其中新视频和近景录制日志已与云端逐项 SHA-256 比对。
-- 归档已压缩为 563 MB 的 `.tar.zst`，并通过 `zstd -t` 和文件清单比对。
-- 最终报告和实验记录已经同步回云端数据盘。
+- 云端最终 checkpoint、训练/评估日志、15 个评估 JSON、旧版近景视频、报告和评估脚本均已同步到本地归档。
+- 归档 `peg_insert_reproduction/archive/2026-09-02/` 有 60 个文件、约 612 MB；压缩包 `peg_insert_reproduction/archive/2026-09-02.tar.zst` 为 563 MB。
+- 压缩包 SHA-256：`b8e91fac185de086df245bdd7afe8e1314b2452846572933ba0f33a4e228a2ce`；已通过 `zstd -t` 和清单校验。
+- 本次新增的“首次成功即停止”视频尚未并入该旧归档；视频已有云端与本地两份并且已经校验。
 
-## 3. 关键决策与原因
+## 还有哪些没做
+
+1. 为 GitHub 配置交互式 HTTPS 认证或 SSH key 后，执行 `git push origin main`。
+2. 若目标是仿真泛化：对摩擦、质量、初始位姿、观测噪声、控制延迟和不同资产做单因素扰动评估。
+3. 若目标是真机：先制定限力、限速、急停和人工监护方案，再做单件低速测试；当前仿真结果不能直接当作真机指标。
+4. 如需长期保存本次新视频，可在用户确认后将它们加入一个新的归档版本；不要改写已校验的旧归档。
+
+## 关键决策及原因
 
 | 决策 | 原因 |
 | --- | --- |
-| 固定 Isaac Lab 版本与 commit | 防止任务 API、物理或默认参数漂移，保证结果可追溯。 |
-| 正式训练使用云端 4090 | 本机 8 GB 显存只适合调试，云端已验证可稳定运行 128 环境。 |
-| 源码与结果放在云端 `/root/gpufree-data` | 数据盘比系统盘更适合保存长训练的源码、日志和 checkpoint。 |
-| 训练 seed 串行运行 | 单张 4090 并行 Isaac Sim 容易竞争 GPU/Kit 资源，降低稳定性。 |
-| 用三训练 seed，而不是单次最高 reward | PPO 具有随机性；需报告跨训练 seed 的均值与标准差。 |
-| 用 `successes` 而非 reward 判断任务表现 | reward 是优化目标，不等价于 Peg Insert 的实际成功率。 |
-| 评估使用独立 seed `1000`–`1004` | 避免只重演训练随机轨迹，衡量固定仿真设置下的随机初态泛化。 |
-| 回放保持单环境但加入 `--disable_fabric` | 云镜像在单环境录制时 Fabric 克隆会卡住；该官方开关只影响录制路径。 |
-| 回放使用近景 viewer 相机 | 默认 `(7.5, 7.5, 7.5)` 使机械臂过小；当前相机聚焦工作台中心。 |
-| 归档后做两端 SHA-256 校验 | 文件存在或大小相同不能证明 checkpoint 未损坏。 |
+| 固定 Isaac Lab 版本与 commit | 防止任务 API、物理和默认参数漂移，保证结果可追溯。 |
+| 正式训练使用云端 4090 | 本机 8 GB 显存仅适合调试，云端能稳定运行 128 环境。 |
+| 三个训练 seed、五个 held-out 评估 seed | PPO 存在随机性；报告均值和标准差比单次最高 reward 更可信。 |
+| 用原生 `successes` 衡量评估 | reward 不等价于实际插入成功率。 |
+| 单环境回放加 `--disable_fabric` | 云镜像的单环境视频路径会出现 Fabric clone 问题；该开关只影响回放路径。 |
+| 使用近景 viewer 相机 | 默认 `(7.5, 7.5, 7.5)` 使机械臂太小；当前相机聚焦工作台。 |
+| 新视频首次成功即停止 | Factory 的成功不会终止 episode，固定 200 控制步会录到归位和第二次尝试。 |
+| `max_episode_length` 仅作视频上限 | 它是失败时的原生 timeout 保护，不是成功视频的固定时长。 |
+| 云端/本地使用 SHA-256 校验 | 文件存在或大小相同不足以证明 checkpoint、视频或日志未损坏。 |
 
-## 4. 重要文件与路径
+## 改过哪些重要文件
 
-### 本机仓库
+### 本机仓库：`/home/xiatenghui/.rebot/issac-sim`
 
-仓库根目录：`/home/xiatenghui/.rebot/issac-sim`
+- `peg_insert_reproduction/scripts/evaluate_rl_games.py`：专用 headless 评估脚本；确定性动作，按原生成功指标统计成功数与首次成功时间。
+- `peg_insert_reproduction/scripts/record_successful_episode.py`：本次新增；录制一条首次成功即结束的近景 episode，不改 Factory 源码。
+- `peg_insert_reproduction/videos/play_until_success/seed{0,1,2}/rl-video-step-0.mp4`：本次新增的三条已校验视频。
+- `peg_insert_reproduction/final_report.md`：最终实验结果、统计口径、边界和云端产物位置。
+- `peg_insert_reproduction/experiment_log.md`：实验过程和最终汇总。
+- `HANDOFF.md`：当前交接文档。
+- `peg_insert_reproduction/archive/2026-09-02/` 和 `.tar.zst`：归档；**绝不提交 Git**。
 
-- `peg_insert_reproduction/final_report.md`
-  - 最终结果、统计口径、边界和云端产物位置。
-- `peg_insert_reproduction/experiment_log.md`
-  - 实验过程记录与最终汇总。
-- `peg_insert_reproduction/scripts/evaluate_rl_games.py`
-  - 专用 headless 评估脚本；参数包括 `--checkpoint`、`--num_envs`、`--episodes`、`--seed`、`--output`。
-- `peg_insert_reproduction/archive/2026-09-02/`
-  - 云端产物的本地副本，60 个文件，**不应提交 Git**。
-- `peg_insert_reproduction/archive/2026-09-02.tar.zst`
-  - 归档压缩包，563 MB，SHA-256：
-    `b8e91fac185de086df245bdd7afe8e1314b2452846572933ba0f33a4e228a2ce`。
-- `IsaacLab/`
-  - 固定版本的官方源码；维持不修改 Factory 实现的原则。
+### 云端：`/root/gpufree-data/isaac-sim`
 
-### 云端
+- `IsaacLab/_isaac_sim -> /isaac-sim`：Isaac Lab 运行时软链接；不要删除。
+- `IsaacLab/logs/rl_games/Factory/baseline_128_seed{0,1,2}/nn/`：三个最终 checkpoint（注意它们在 `IsaacLab/logs`，不在 `peg_insert_reproduction/logs`）。
+- `IsaacLab/logs/rl_games/Factory/baseline_128_seed{0,1,2}/videos/play/rl-video-step-0.mp4`：旧版固定步数的近景回放。
+- `peg_insert_reproduction/videos/play_until_success/seed{0,1,2}/rl-video-step-0.mp4`：当前的首次成功即停止近景回放。
+- `peg_insert_reproduction/logs/eval_seed{0,1,2}_seed{1000..1004}.json`：15 个原始评估结果。
+- `peg_insert_reproduction/logs/baseline_128_seed{0,1,2}.log`：训练日志。
 
-云端根目录：`/root/gpufree-data/isaac-sim`
+## 当前问题
 
-- `IsaacLab/_isaac_sim -> /isaac-sim`
-  - Isaac Lab 查找镜像运行时的软链接；不要删除。
-- `IsaacLab/logs/rl_games/Factory/baseline_128_seed{0,1,2}/nn/`
-  - 三个最终 checkpoint。
-- `IsaacLab/logs/rl_games/Factory/baseline_128_seed{0,1,2}/videos/play/rl-video-step-0.mp4`
-  - 三段验收回放视频。
-- `peg_insert_reproduction/logs/eval_seed{0,1,2}_seed{1000..1004}.json`
-  - 15 个原始评估结果。
-- `peg_insert_reproduction/logs/baseline_128_seed{0,1,2}.log`
-  - 训练日志。
-- `peg_insert_reproduction/logs/eval_all_seed1000.log`
-  - 首轮三 seed 评估日志。
-- `peg_insert_reproduction/logs/eval_multiseed_1001_1004.log`
-  - 扩展 held-out 评估日志。
-- `peg_insert_reproduction/logs/replay_all_seed1000.log`
-  - 视频录制日志。
-- `peg_insert_reproduction/logs/replay_closeup_all_seed1000.log`
-  - 当前近景视频重录日志。
+- GitHub remote 使用 HTTPS，但当前环境没有凭据；此前 `git push origin main` 报错：`fatal: could not read Username for 'https://github.com': No such device or address`。不要把 token、SSH 私钥或云服务器密码写入仓库、日志或本文件。
+- 结论仅覆盖固定 Isaac Sim 工况；没有域随机化或真机验证。这是实验边界，不是当前训练故障。
 
-## 5. 重要改动
+## 接下来怎么做
 
-- 新增 `peg_insert_reproduction/scripts/evaluate_rl_games.py`。
-  - 复用官方 `play.py` 的 checkpoint/agent 初始化方式。
-  - 固定使用确定性动作，并在 episode 结束时统计成功数与首次成功时间。
-  - RNN 状态在 `torch.inference_mode()` 内重置，避免 PyTorch 的 inference tensor 就地更新错误。
-- 新增 `peg_insert_reproduction/final_report.md`。
-- 更新 `peg_insert_reproduction/experiment_log.md` 为最终统计结果。
-- **未改动**任何 IsaacLab Factory 任务源码。
+1. 完成 GitHub 认证后推送本地提交。
+2. 用户验收新视频画面与时长；如需更长的成功后停留画面，再给录制脚本增加少量 tail steps，不要恢复固定 200 步录制。
+3. 如开展新实验，以当前三 seed 结果为 baseline；每次只改变一个因素，并保留同一 held-out 评估协议。
 
-## 6. 当前问题与未完成事项
+## 云端命令参考
 
-### 需要用户或具备 GitHub 凭据的操作者处理
-
-本地提交已创建：
-
-```text
-fba6943 Document PegInsert baseline reproduction
-```
-
-其中包含报告、实验记录和评估脚本；归档目录没有被提交。向 `origin/main` 推送失败，原因是本环境没有 GitHub HTTPS 凭据：
-
-```text
-fatal: could not read Username for 'https://github.com': No such device or address
-```
-
-认证完成后执行：
-
-```bash
-git push origin main
-```
-
-不要将 GitHub token、SSH 密钥或云服务器密码写入仓库、日志或本文件。
-
-### 实验边界，而非故障
-
-- 当前结论只覆盖固定 Isaac Sim 工况，不能直接等价于真机插入成功率。
-- 尚未测试摩擦、质量、初始位姿、观测噪声、控制延迟或不同资产等域外扰动。
-- 尚未开展真机验证；如要进行，必须先制定限力、限速、急停和人工监护流程。
-
-## 7. 接下来建议做什么
-
-1. 完成 GitHub 认证后推送 `fba6943`。
-2. 若目标是仿真泛化：设计单因素扰动矩阵（摩擦、质量、初始位姿、观测噪声、控制延迟），先评估当前 checkpoint，再决定是否训练新模型。
-3. 若目标是改进 baseline：以当前结果为对照，每次只改一个因素（奖励、控制器或 PPO 参数），保持三训练 seed 和相同 held-out 评估协议。
-4. 若目标是真机：先完成安全计划与单件低速测试，不能把当前仿真成功率直接当作真机指标。
-
-## 8. 启动与评估命令参考
-
-云端运行 Isaac Lab 前，每次都需要补充 PyTorch CUDA 动态库路径：
+每次运行 Isaac Lab 前：
 
 ```bash
 cd /root/gpufree-data/isaac-sim/IsaacLab
@@ -170,7 +116,7 @@ export HOME=/root/gpufree-data/home
 export LD_LIBRARY_PATH="$TORCH_LIB:$LD_LIBRARY_PATH"
 ```
 
-训练模板：
+训练：
 
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rl_games/train.py \
@@ -179,7 +125,7 @@ export LD_LIBRARY_PATH="$TORCH_LIB:$LD_LIBRARY_PATH"
   agent.params.config.full_experiment_name=baseline_128_seedSEED
 ```
 
-评估模板：
+评估：
 
 ```bash
 ./isaaclab.sh -p /root/gpufree-data/isaac-sim/peg_insert_reproduction/scripts/evaluate_rl_games.py \
@@ -189,42 +135,24 @@ export LD_LIBRARY_PATH="$TORCH_LIB:$LD_LIBRARY_PATH"
   --output /root/gpufree-data/isaac-sim/peg_insert_reproduction/logs/eval.json
 ```
 
-回放模板：
+首次成功视频：
 
 ```bash
-./isaaclab.sh -p scripts/reinforcement_learning/rl_games/play.py \
-  --task Isaac-Factory-PegInsert-Direct-v0 \
-  --headless --disable_fabric --video --video_length 200 \
-  --num_envs 1 --seed 1000 --checkpoint /absolute/path/to/final_checkpoint.pth \
-  env.viewer.eye="[2.0,2.0,1.5]" env.viewer.lookat="[0.5,0.0,0.5]"
+./isaaclab.sh -p /root/gpufree-data/isaac-sim/peg_insert_reproduction/scripts/record_successful_episode.py \
+  --task Isaac-Factory-PegInsert-Direct-v0 --headless --disable_fabric --seed 1000 \
+  --checkpoint /absolute/path/to/final_checkpoint.pth \
+  --video_folder /root/gpufree-data/isaac-sim/peg_insert_reproduction/videos/play_until_success/seedN
 ```
 
-## 9. 已踩过的坑：不要重复
+## 已踩过的坑：不要重复
 
-### 训练与资源
-
-- 本机 8 GB GPU 不适合 128 环境正式训练；只用于小规模调试。
-- 单张 4090 不要并发运行多个 Isaac Sim 训练、评估或录制任务。
-- `num_envs=1` 不能直接沿用 PPO 正式训练配置：`1 × 128` 的 batch 小于 `minibatch_size=512` 且不能整除。正式 baseline 固定 128 环境。
-- `nvidia-smi` 有占用不等于训练成功；必须检查 `MAX EPOCHS NUM!`、`Training time:` 和最终 checkpoint。
-- 后台 Python 输出会缓冲；监控优先看进程和 checkpoint，完成后再查日志末尾。
-
-### Isaac Sim 与运行时
-
-- 云镜像未自动暴露 PyTorch `torch/lib`，遗漏 `LD_LIBRARY_PATH` 会报 `libtorch_cuda_linalg.so` 缺失。
-- 不要用裸 `/isaac-sim/python.sh` 做完整验证；用 `./isaaclab.sh -p ...` 以获得 Kit/pxr 环境。
-- 单环境 `play.py --video` 在此镜像中会触发 Fabric clone 卡顿；录制必须加 `--disable_fabric`。
-- Factory 默认 viewer 很远，直接录制会让机械臂在画面中太小；录制时显式设置近景 `env.viewer.eye` 和 `env.viewer.lookat`。
-- Factory episode 同步终止；评估脚本依赖这一点，并对非同步终止显式报错。
-- RNN 状态重置必须置于 `torch.inference_mode()` 内，否则会触发 inference tensor 的就地更新错误。
-
-### 数据与归档
-
-- 云端没有 `rsync`；同步时使用 `scp`，完成后用 SHA-256 比对，不能只依据文件大小。
-- 归档目录和 `.tar.zst` 约 1.2 GB，不能加入 Git；当前保持未跟踪状态。
-- 不要删除 `/root/gpufree-data` 中的原始产物，云端与本地归档应互为副本。
-
-### Git 与凭据
-
-- 当前 HTTPS remote 没有可用 GitHub 凭据，直接 `git push` 会失败。
-- 不要把 token 放入 URL、脚本、终端历史或 `HANDOFF.md`；完成交互式认证或配置 SSH key 后再推送。
+- 本机 8 GB GPU 不适合 128 环境正式训练；单张 4090 也不要并发跑多个 Isaac Sim 训练、评估或录制任务。
+- `num_envs=1` 不能沿用 PPO 正式训练配置：`1 × 128` batch 小于 `minibatch_size=512` 且无法整除。
+- `nvidia-smi` 有占用不代表训练成功；须检查 `MAX EPOCHS NUM!`、`Training time:` 和最终 checkpoint。
+- 漏设 `LD_LIBRARY_PATH` 会报 `libtorch_cuda_linalg.so` 缺失；完整运行使用 `./isaaclab.sh -p ...`，不要裸用 `/isaac-sim/python.sh`。
+- 单环境视频需要 `--disable_fabric`；默认 viewer 太远，必须使用当前近景相机。
+- Factory success 不会结束 episode；`play.py --video_length 200` 会录进重置和新的插孔尝试。用 `record_successful_episode.py`。
+- 评估脚本中 RNN state 重置必须在 `torch.inference_mode()` 内，否则会报 inference tensor 的就地更新错误。
+- 云端没有 `rsync`；用 `scp` 同步后必须做 SHA-256 校验。
+- 归档目录和 `.tar.zst` 约 1.2 GB，不能加入 Git；不要删除云端原始产物。
+- 不要把 GitHub token、SSH 私钥或云服务器密码写进命令、Git remote、日志或 `HANDOFF.md`。
