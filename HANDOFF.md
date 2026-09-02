@@ -44,12 +44,13 @@
 ### 回放与人工验收
 
 - 三个最终 checkpoint 已在 `eval_seed=1000`、单环境、200 控制步条件下录制 headless 视频。
-- 用户已人工检查视频，未发现异常动作。
+- 初版视频已人工检查，未发现异常动作；因默认相机过远，已用近景相机重新录制当前三段视频。
+- 当前视频使用 `env.viewer.eye=[2.0,2.0,1.5]`、`env.viewer.lookat=[0.5,0.0,0.5]`，机械臂和工作台占据画面主体。
 
 ### 归档与报告
 
 - 云端最终 checkpoint、全部日志、15 个评估 JSON、视频、报告和评估脚本均已同步到本地。
-- 本地归档包含 59 个文件、约 612 MB；已与云端逐项 SHA-256 比对，全部一致。
+- 本地归档包含 60 个文件、约 612 MB；其中新视频和近景录制日志已与云端逐项 SHA-256 比对。
 - 归档已压缩为 563 MB 的 `.tar.zst`，并通过 `zstd -t` 和文件清单比对。
 - 最终报告和实验记录已经同步回云端数据盘。
 
@@ -65,6 +66,7 @@
 | 用 `successes` 而非 reward 判断任务表现 | reward 是优化目标，不等价于 Peg Insert 的实际成功率。 |
 | 评估使用独立 seed `1000`–`1004` | 避免只重演训练随机轨迹，衡量固定仿真设置下的随机初态泛化。 |
 | 回放保持单环境但加入 `--disable_fabric` | 云镜像在单环境录制时 Fabric 克隆会卡住；该官方开关只影响录制路径。 |
+| 回放使用近景 viewer 相机 | 默认 `(7.5, 7.5, 7.5)` 使机械臂过小；当前相机聚焦工作台中心。 |
 | 归档后做两端 SHA-256 校验 | 文件存在或大小相同不能证明 checkpoint 未损坏。 |
 
 ## 4. 重要文件与路径
@@ -80,10 +82,10 @@
 - `peg_insert_reproduction/scripts/evaluate_rl_games.py`
   - 专用 headless 评估脚本；参数包括 `--checkpoint`、`--num_envs`、`--episodes`、`--seed`、`--output`。
 - `peg_insert_reproduction/archive/2026-09-02/`
-  - 云端产物的本地副本，59 个文件，**不应提交 Git**。
+  - 云端产物的本地副本，60 个文件，**不应提交 Git**。
 - `peg_insert_reproduction/archive/2026-09-02.tar.zst`
   - 归档压缩包，563 MB，SHA-256：
-    `bd6fb29e9affe53da7e60ef97a0a6f7e56ac3d22c9b3cd499b1ad6e009b75a06`。
+    `b8e91fac185de086df245bdd7afe8e1314b2452846572933ba0f33a4e228a2ce`。
 - `IsaacLab/`
   - 固定版本的官方源码；维持不修改 Factory 实现的原则。
 
@@ -107,6 +109,8 @@
   - 扩展 held-out 评估日志。
 - `peg_insert_reproduction/logs/replay_all_seed1000.log`
   - 视频录制日志。
+- `peg_insert_reproduction/logs/replay_closeup_all_seed1000.log`
+  - 当前近景视频重录日志。
 
 ## 5. 重要改动
 
@@ -191,7 +195,8 @@ export LD_LIBRARY_PATH="$TORCH_LIB:$LD_LIBRARY_PATH"
 ./isaaclab.sh -p scripts/reinforcement_learning/rl_games/play.py \
   --task Isaac-Factory-PegInsert-Direct-v0 \
   --headless --disable_fabric --video --video_length 200 \
-  --num_envs 1 --seed 1000 --checkpoint /absolute/path/to/final_checkpoint.pth
+  --num_envs 1 --seed 1000 --checkpoint /absolute/path/to/final_checkpoint.pth \
+  env.viewer.eye="[2.0,2.0,1.5]" env.viewer.lookat="[0.5,0.0,0.5]"
 ```
 
 ## 9. 已踩过的坑：不要重复
@@ -209,6 +214,7 @@ export LD_LIBRARY_PATH="$TORCH_LIB:$LD_LIBRARY_PATH"
 - 云镜像未自动暴露 PyTorch `torch/lib`，遗漏 `LD_LIBRARY_PATH` 会报 `libtorch_cuda_linalg.so` 缺失。
 - 不要用裸 `/isaac-sim/python.sh` 做完整验证；用 `./isaaclab.sh -p ...` 以获得 Kit/pxr 环境。
 - 单环境 `play.py --video` 在此镜像中会触发 Fabric clone 卡顿；录制必须加 `--disable_fabric`。
+- Factory 默认 viewer 很远，直接录制会让机械臂在画面中太小；录制时显式设置近景 `env.viewer.eye` 和 `env.viewer.lookat`。
 - Factory episode 同步终止；评估脚本依赖这一点，并对非同步终止显式报错。
 - RNN 状态重置必须置于 `torch.inference_mode()` 内，否则会触发 inference tensor 的就地更新错误。
 
