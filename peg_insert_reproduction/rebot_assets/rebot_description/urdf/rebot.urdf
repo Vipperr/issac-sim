@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot name="robot">
+  <link name="base_link">
+    <inertial>
+      <mass value="2.18533779"/>
+      <origin xyz="-0.00001406 7e-8 0.02866472" rpy="0 0 0"/>
+      <inertia ixx="0.00639196" ixy="6e-8" ixz="4.4e-7" iyy="0.00420049" iyz="-1e-8" izz="0.00774826"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rebot_description/meshes/base_link.stl"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rebot_description/meshes/base_link.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="Link_1">
+    <inertial>
+      <mass value="0.58120145"/>
+      <origin xyz="0.01707732 0.00139766 0.05032116" rpy="0 0 0"/>
+      <inertia ixx="0.00054081" ixy="-0.00000245" ixz="-0.0000659" iyy="0.00044359" iyz="-0.00000532" izz="0.00042891"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rebot_description/meshes/Link_1.stl"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rebot_description/meshes/Link_1.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="Link_2">
+    <inertial>
+      <mass value="1.60368624"/>
+      <origin xyz="0.16897189 0.00320132 -0.03179461" rpy="0 0 0"/>
+      <inertia ixx="0.00087455" ixy="0.00018721" ixz="0.00012606" iyy="0.01142077" iyz="-0.00002317" izz="0.01114053"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rebot_description/meshes/Link_2.stl"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rebot_description/meshes/Link_2.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="Link_3">
+    <inertial>
+      <mass value="1.66438106"/>
+      <origin xyz="0.05451598 0.1229876 -0.03495435" rpy="0 0 0"/>
+      <inertia ixx="0.01308465" ixy="-0.00026787" ixz="9e-8" iyy="0.00103919" iyz="-0.00007307" izz="0.01279408"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rebot_description/meshes/Link_3.stl"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rebot_description/meshes/Link_3.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="Link_4">
+    <inertial>
+      <mass value="0.59026747"/>
+      <origin xyz="0.0635451 -0.05377796 -0.03572249" rpy="0 0 0"/>
+      <inertia ixx="0.00045905" ixy="0.00022821" ixz="-2e-8" iyy="0.0007324" iyz="-0.00000132" izz="0.00076161"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rebot_description/meshes/Link_4.stl"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rebot_description/meshes/Link_4.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="Link_5">
+    <inertial>
+      <mass value="0.5256757"/>
+      <origin xyz="-0.00000532 -0.00209418 0.03816644" rpy="0 0 0"/>
+      <inertia ixx="0.000367" ixy="-4e-8" ixz="1e-8" iyy="0.0003117" iyz="0.00003518" izz="0.00030592"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rebot_description/meshes/Link_5.stl"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rebot_description/meshes/Link_5.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="Link_6">
+    <inertial>
+      <mass value="0.61637687"/>
+      <origin xyz="-0.00007554 0.00102425 0.04631788" rpy="0 0 0"/>
+      <inertia ixx="0.00051834" ixy="0.00000786" ixz="-0.00000142" iyy="0.00096771" iyz="0.0000461" izz="0.00084441"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rebot_description/meshes/Link_6.stl"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rebot_description/meshes/Link_6.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="ee_1">
+    <inertial>
+      <mass value="0.1165367"/>
+      <origin xyz="-0.00388297 -0.01782953 0.07211446" rpy="0 0 0"/>
+      <inertia ixx="0.00004444" ixy="-9.3e-7" ixz="1.9e-7" iyy="0.00002188" iyz="0.00000995" izz="0.00004834"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rebot_description/meshes/ee_1.stl"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rebot_description/meshes/ee_1.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="ee_2">
+    <inertial>
+      <mass value="0.11653672"/>
+      <origin xyz="-0.00451705 0.01782952 0.07211446" rpy="0 0 0"/>
+      <inertia ixx="0.00004444" ixy="-9.3e-7" ixz="-1.9e-7" iyy="0.00002188" iyz="-0.00000995" izz="0.00004834"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rebot_description/meshes/ee_2.stl"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rebot_description/meshes/ee_2.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="Tool">
+    <inertial>
+      <mass value="0.01" /> 
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <inertia ixx="1e-6" ixy="0.0" ixz="0.0" iyy="1e-6" iyz="0.0" izz="1e-6" />
+    </inertial>
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <material name="red">
+        <color rgba="1 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+  <link name="gripper_motor_link">
+    <!-- 真机第 7 个电机的虚拟关节 link，仅用于 ros2_control 暴露硬件接口。 -->
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="1e-8" ixy="0.0" ixz="0.0" iyy="1e-8" iyz="0.0" izz="1e-8"/>
+    </inertial>
+  </link>
+  <joint name="Joint_1" type="revolute">
+    <parent link="base_link"/>
+    <child link="Link_1"/>
+    <origin xyz="0 0 0.08595" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-1.57079633" upper="1.57079633" effort="100" velocity="3.0"/>
+  </joint>
+  <joint name="Joint_2" type="revolute">
+    <parent link="Link_1"/>
+    <child link="Link_2"/>
+    <origin xyz="0.02000026 0.03562485 0.05755" rpy="1.5707 0 -3.14158531"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="3.14159265" upper="4.71238898" effort="100" velocity="3.0"/>
+  </joint>
+  <joint name="Joint_3" type="revolute">
+    <parent link="Link_2"/>
+    <child link="Link_3"/>
+    <origin xyz="0.264 0 0.00000388" rpy="0.00001469 0.00009633 1.5707"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="2.92203023" upper="5.27822472" effort="100" velocity="3.0"/>
+  </joint>
+  <joint name="Joint_4" type="revolute">
+    <parent link="Link_3"/>
+    <child link="Link_4"/>
+    <origin xyz="0.05397768 0.24260501 0" rpy="0.00002939 0.00019265 1.5707"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-1.35123391" upper="1.79035875" effort="100" velocity="3.0"/>
+  </joint>
+  <joint name="Joint_5" type="revolute">
+    <parent link="Link_4"/>
+    <child link="Link_5"/>
+    <origin xyz="0.07832057 -0.03549174 -0.03560106" rpy="0 -1.57079633 -1.57060367"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14159265" upper="0.00000000" effort="100" velocity="3.0"/>
+  </joint>
+  <joint name="Joint_6" type="revolute">
+    <parent link="Link_5"/>
+    <child link="Link_6"/>
+    <origin xyz="-0.0000046 0.02349226 0.038" rpy="1.57079633 0.00022208 3.1414294"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-4.71238898" upper="1.57079633" effort="100" velocity="3.0"/>
+  </joint>
+  <joint name="Joint_ee_1" type="prismatic">
+    <parent link="Link_6"/>
+    <child link="ee_1"/>
+    <origin xyz="-0.085 -0.00420001 0.0858" rpy="-1.57079633 0 -1.57079633"/>
+    <axis xyz="0 0 1"/>
+    <!--
+      0 = 完全闭合，0.08 = 齿条行程上限。行程是单向的，所以下限是 0 而不是
+      -0.08。齿轮半径 1cm，所以 0.08m 对应电机转 8rad (见 Joint_7)。
+    -->
+    <limit lower="0" upper="0.08" effort="100" velocity="0.1"/>
+  </joint>
+  <joint name="Joint_ee_2" type="prismatic">
+    <parent link="Link_6"/>
+    <child link="ee_2"/>
+    <origin xyz="0.085 -0.0042 0.0858" rpy="1.57079633 0 -1.57079633"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="0" upper="0.08" effort="100" velocity="0.1"/>
+  </joint>
+  <joint name="fixed_joint" type="fixed">
+    <origin xyz="0 0 0.12" rpy="0 0 0" />
+    <parent link="Link_6" />
+    <child link="Tool" />
+  </joint>
+  <joint name="Joint_7" type="revolute">
+    <!--
+      夹爪电机轴 (CAN 0x07)。这一个电机同时驱动 Joint_ee_1 和 Joint_ee_2，
+      所以真机控制的是那两个手指关节，Joint_7 本身不导出硬件接口 —— 否则会有
+      两套接口争同一个电机。这里保留它只为构建运动学树。
+
+      0 = 夹爪闭合，负方向张开 —— 这个方向是实测的，不是推测：正方向加到
+      0.4Nm (齿条约 40N) 只挪了 0.1mm，是闭合硬限位；负方向 0.21Nm 就能起步
+      并一路自由行走。闭合硬限位实际在 q≈+0.04rad，不是精确的 0。
+
+      齿轮半径 1cm => 齿条行程 = 0.01 * |角度|，-8rad 对应齿条 8cm 的机械
+      上限。注意电机 PMAX 已改为 12.5 (原为 pi)，编码器夹紧要到 12.5rad
+      (=12.5cm) 才生效，早已越过齿条极限，所以末端保护完全依赖这里和
+      rebot_hardware_interface.hpp 里的软限位。
+    -->
+    <parent link="Link_6"/>
+    <child link="gripper_motor_link"/>
+    <origin xyz="0 0 0.12" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-8" upper="0" effort="100" velocity="1"/>
+  </joint>
+</robot>
