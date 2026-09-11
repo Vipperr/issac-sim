@@ -34,19 +34,16 @@ def main():
             init_state=ArticulationCfg.InitialStateCfg(
                 joint_pos={
                     "Joint_1": 0.0,
-                    "Joint_2": 3.92699082,
-                    "Joint_3": 4.10012748,
-                    "Joint_4": 0.21956242,
-                    "Joint_5": -1.57079633,
-                    "Joint_6": -1.57079633,
+                    "Joint_2": 0.52359878,
+                    "Joint_3": -1.57079633,
+                    "Joint_4": 0.0,
+                    "Joint_5": 0.0,
+                    "Joint_6": 0.0,
                 }
             ),
             actuators={
                 "arm": ImplicitActuatorCfg(
                     joint_names_expr=["Joint_[1-6]"], stiffness=0.0, damping=0.0, effort_limit_sim=20.0
-                ),
-                "gripper_motor_lock": ImplicitActuatorCfg(
-                    joint_names_expr=["Joint_7"], stiffness=100.0, damping=10.0, effort_limit_sim=1.0
                 ),
                 "fingers": ImplicitActuatorCfg(
                     joint_names_expr=["Joint_ee_[12]"], stiffness=500.0, damping=50.0, effort_limit_sim=100.0
@@ -61,9 +58,11 @@ def main():
         robot.write_joint_state_to_sim(joint_pos, torch.zeros_like(joint_pos))
         sim.step()
         robot.update(sim.get_physics_dt())
-    expected_joints = {*(f"Joint_{index}" for index in range(1, 7)), "Joint_ee_1", "Joint_ee_2", "Joint_7"}
+    expected_joints = {*(f"Joint_{index}" for index in range(1, 7)), "Joint_ee_1", "Joint_ee_2"}
     assert expected_joints <= set(robot.joint_names), robot.joint_names
     assert "Tool" in robot.body_names, robot.body_names
+    j2_limits = robot.data.soft_joint_pos_limits[0, robot.joint_names.index("Joint_2")]
+    assert torch.allclose(j2_limits, torch.tensor([0.0, 3.1415926], device=sim.device), atol=1e-5), j2_limits
 
     for _ in range(args_cli.steps):
         robot.set_joint_effort_target(torch.zeros_like(robot.data.joint_pos))
@@ -74,6 +73,7 @@ def main():
     tool_index = robot.body_names.index("Tool")
     tool_euler = torch_utils.get_euler_xyz(robot.data.body_quat_w[0, tool_index].unsqueeze(0))
     print(f"joints={robot.joint_names}", flush=True)
+    print(f"joint_2_limits={j2_limits.tolist()}", flush=True)
     print(f"bodies={robot.body_names}", flush=True)
     print(f"tool_position={robot.data.body_pos_w[0, tool_index].tolist()}", flush=True)
     print(f"tool_quaternion={robot.data.body_quat_w[0, tool_index].tolist()}", flush=True)

@@ -6,6 +6,7 @@ import json
 import math
 import random
 import sys
+from pathlib import Path
 
 from isaaclab.app import AppLauncher
 
@@ -38,6 +39,10 @@ from isaaclab.utils.assets import retrieve_file_path
 from isaaclab_rl.rl_games import RlGamesGpuEnv, RlGamesVecEnvWrapper
 import isaaclab_tasks  # noqa: F401
 from isaaclab_tasks.utils.hydra import hydra_task_config
+
+if args_cli.task.startswith("Isaac-Rebot-"):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    import rebot_task  # noqa: F401
 
 
 @hydra_task_config(args_cli.task, args_cli.agent)

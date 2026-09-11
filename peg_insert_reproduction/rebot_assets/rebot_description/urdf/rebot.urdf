@@ -186,98 +186,70 @@
       </material>
     </visual>
   </link>
-  <link name="gripper_motor_link">
-    <!-- 真机第 7 个电机的虚拟关节 link，仅用于 ros2_control 暴露硬件接口。 -->
-    <inertial>
-      <mass value="0.001"/>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <inertia ixx="1e-8" ixy="0.0" ixz="0.0" iyy="1e-8" iyz="0.0" izz="1e-8"/>
-    </inertial>
-  </link>
   <joint name="Joint_1" type="revolute">
     <parent link="base_link"/>
     <child link="Link_1"/>
     <origin xyz="0 0 0.08595" rpy="0 0 0"/>
     <axis xyz="0 0 1"/>
-    <limit lower="-1.57079633" upper="1.57079633" effort="100" velocity="3.0"/>
+    <limit lower="-1.570796326794897" upper="1.570796326794897" effort="20" velocity="3"/>
   </joint>
   <joint name="Joint_2" type="revolute">
     <parent link="Link_1"/>
     <child link="Link_2"/>
     <origin xyz="0.02000026 0.03562485 0.05755" rpy="1.5707 0 -3.14158531"/>
     <axis xyz="0 0 1"/>
-    <limit lower="3.14159265" upper="4.71238898" effort="100" velocity="3.0"/>
+    <limit lower="0.0" upper="3.1415926" effort="20" velocity="3"/>
   </joint>
   <joint name="Joint_3" type="revolute">
     <parent link="Link_2"/>
     <child link="Link_3"/>
     <origin xyz="0.264 0 0.00000388" rpy="0.00001469 0.00009633 1.5707"/>
     <axis xyz="0 0 1"/>
-    <limit lower="2.92203023" upper="5.27822472" effort="100" velocity="3.0"/>
+    <limit lower="-3.141592653589793" upper="0.0" effort="20" velocity="3"/>
   </joint>
   <joint name="Joint_4" type="revolute">
     <parent link="Link_3"/>
     <child link="Link_4"/>
     <origin xyz="0.05397768 0.24260501 0" rpy="0.00002939 0.00019265 1.5707"/>
     <axis xyz="0 0 1"/>
-    <limit lower="-1.35123391" upper="1.79035875" effort="100" velocity="3.0"/>
+    <limit lower="-1.570796326794897" upper="1.570796326794897" effort="20" velocity="3"/>
   </joint>
   <joint name="Joint_5" type="revolute">
     <parent link="Link_4"/>
     <child link="Link_5"/>
     <origin xyz="0.07832057 -0.03549174 -0.03560106" rpy="0 -1.57079633 -1.57060367"/>
     <axis xyz="0 0 1"/>
-    <limit lower="-3.14159265" upper="0.00000000" effort="100" velocity="3.0"/>
+    <limit lower="-1.570796326794897" upper="1.570796326794897" effort="20" velocity="3"/>
   </joint>
   <joint name="Joint_6" type="revolute">
     <parent link="Link_5"/>
     <child link="Link_6"/>
     <origin xyz="-0.0000046 0.02349226 0.038" rpy="1.57079633 0.00022208 3.1414294"/>
     <axis xyz="0 0 1"/>
-    <limit lower="-4.71238898" upper="1.57079633" effort="100" velocity="3.0"/>
+    <limit lower="-1.570796326794897" upper="1.570796326794897" effort="20" velocity="3"/>
   </joint>
   <joint name="Joint_ee_1" type="prismatic">
     <parent link="Link_6"/>
     <child link="ee_1"/>
     <origin xyz="-0.085 -0.00420001 0.0858" rpy="-1.57079633 0 -1.57079633"/>
-    <axis xyz="0 0 1"/>
+    <axis xyz="0 0 -1"/>
     <!--
-      0 = 完全闭合，0.08 = 齿条行程上限。行程是单向的，所以下限是 0 而不是
-      -0.08。齿轮半径 1cm，所以 0.08m 对应电机转 8rad (见 Joint_7)。
+      0 = 完全闭合，0.05 = 齿条行程上限。行程是单向的，所以下限是 0 而不是
+      -0.05。齿轮半径 1cm，所以 0.05m 对应夹爪电机转 5rad。
     -->
-    <limit lower="0" upper="0.08" effort="100" velocity="0.1"/>
+    <limit lower="0" upper="0.05" effort="100" velocity="0.1"/>
   </joint>
   <joint name="Joint_ee_2" type="prismatic">
     <parent link="Link_6"/>
     <child link="ee_2"/>
     <origin xyz="0.085 -0.0042 0.0858" rpy="1.57079633 0 -1.57079633"/>
-    <axis xyz="0 0 1"/>
-    <limit lower="0" upper="0.08" effort="100" velocity="0.1"/>
+    <axis xyz="0 0 -1"/>
+    <limit lower="0" upper="0.05" effort="100" velocity="0.1"/>
+    <mimic joint="Joint_ee_1" multiplier="1" offset="0"/>
   </joint>
   <joint name="fixed_joint" type="fixed">
     <origin xyz="0 0 0.12" rpy="0 0 0" />
     <parent link="Link_6" />
     <child link="Tool" />
-  </joint>
-  <joint name="Joint_7" type="revolute">
-    <!--
-      夹爪电机轴 (CAN 0x07)。这一个电机同时驱动 Joint_ee_1 和 Joint_ee_2，
-      所以真机控制的是那两个手指关节，Joint_7 本身不导出硬件接口 —— 否则会有
-      两套接口争同一个电机。这里保留它只为构建运动学树。
-
-      0 = 夹爪闭合，负方向张开 —— 这个方向是实测的，不是推测：正方向加到
-      0.4Nm (齿条约 40N) 只挪了 0.1mm，是闭合硬限位；负方向 0.21Nm 就能起步
-      并一路自由行走。闭合硬限位实际在 q≈+0.04rad，不是精确的 0。
-
-      齿轮半径 1cm => 齿条行程 = 0.01 * |角度|，-8rad 对应齿条 8cm 的机械
-      上限。注意电机 PMAX 已改为 12.5 (原为 pi)，编码器夹紧要到 12.5rad
-      (=12.5cm) 才生效，早已越过齿条极限，所以末端保护完全依赖这里和
-      rebot_hardware_interface.hpp 里的软限位。
-    -->
-    <parent link="Link_6"/>
-    <child link="gripper_motor_link"/>
-    <origin xyz="0 0 0.12" rpy="0 0 0"/>
-    <axis xyz="0 0 1"/>
-    <limit lower="-8" upper="0" effort="100" velocity="1"/>
   </joint>
 </robot>

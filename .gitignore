@@ -1,1 +1,6 @@
 .git-metadata/
+
+# Generated experiment artifacts; keep source and reproducible scripts in Git.
+peg_insert_reproduction/archive/
+__pycache__/
+*.py[cod]

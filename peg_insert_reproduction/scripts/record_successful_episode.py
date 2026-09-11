@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Record one deterministic Factory episode, stopping at its first success."""
+"""Record one complete deterministic Factory episode."""
 
 import argparse
 import math
 import sys
+from pathlib import Path
 
 from isaaclab.app import AppLauncher
 
@@ -30,9 +31,14 @@ from rl_games.torch_runner import Runner
 
 from isaaclab.envs import DirectMARLEnv, DirectMARLEnvCfg, DirectRLEnvCfg, ManagerBasedRLEnvCfg, multi_agent_to_single_agent
 from isaaclab.utils.assets import retrieve_file_path
+from isaaclab.utils.math import quat_apply
 from isaaclab_rl.rl_games import RlGamesGpuEnv, RlGamesVecEnvWrapper
 import isaaclab_tasks  # noqa: F401
 from isaaclab_tasks.utils.hydra import hydra_task_config
+
+if args_cli.task.startswith("Isaac-Rebot-"):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    import rebot_task  # noqa: F401
 
 
 @hydra_task_config(args_cli.task, args_cli.agent)
@@ -40,8 +46,12 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     env_cfg.scene.num_envs = 1
     env_cfg.sim.device = args_cli.device if args_cli.device is not None else env_cfg.sim.device
     env_cfg.seed = args_cli.seed
-    env_cfg.viewer.eye = (2.0, 2.0, 1.5)
-    env_cfg.viewer.lookat = (0.5, 0.0, 0.5)
+    if args_cli.task.startswith("Isaac-Rebot-"):
+        env_cfg.viewer.eye = (0.53, 0.45, 0.28)
+        env_cfg.viewer.lookat = (0.20, 0.0, 0.06)
+    else:
+        env_cfg.viewer.eye = (2.0, 2.0, 1.5)
+        env_cfg.viewer.lookat = (0.5, 0.0, 0.5)
     agent_cfg["params"]["seed"] = args_cli.seed
 
     env = gym.make(args_cli.task, cfg=env_cfg, render_mode="rgb_array")
@@ -78,19 +88,23 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     agent.reset()
 
     obs = env.reset()
+    task = env.unwrapped
+    peg_axis = quat_apply(task.held_quat, torch.tensor([[0.0, 0.0, 1.0]], device=task.device))
+    print(f"peg_tip={task.held_pos[0].tolist()} hole_root={task.fixed_pos[0].tolist()} peg_axis={peg_axis[0].tolist()}", flush=True)
     if isinstance(obs, dict):
         obs = obs["obs"]
     _ = agent.get_batch_size(obs, 1)
     if agent.is_rnn:
         agent.init_rnn()
 
+    success_reported = False
     for step in range(1, env.unwrapped.max_episode_length + 1):
         with torch.inference_mode():
             actions = agent.get_action(agent.obs_to_torch(obs), is_deterministic=True)
             obs, _, dones, infos = env.step(actions)
-        if bool(infos["logs_rew_curr_success"].item()):
+        if not success_reported and bool(infos["logs_rew_curr_success"].item()):
             print(f"first_success_step={step} seconds={step * env.unwrapped.step_dt:.2f}", flush=True)
-            break
+            success_reported = True
         if bool(dones.item()):
             print(f"timeout_step={step}", flush=True)
             break

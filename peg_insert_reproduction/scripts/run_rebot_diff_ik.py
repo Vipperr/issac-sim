@@ -15,6 +15,13 @@ parser.add_argument("--asset", required=True, help="Path to the converted Rebot 
 parser.add_argument("--steps", type=int, default=600, help="Physics steps used to settle on the target.")
 parser.add_argument("--base-height", type=float, default=0.50, help="Robot base height above the test floor [m].")
 parser.add_argument(
+    "--arm-joints",
+    nargs=6,
+    type=float,
+    metavar=("J1", "J2", "J3", "J4", "J5", "J6"),
+    help="Optional six-joint start pose used to check a planned work pose.",
+)
+parser.add_argument(
     "--delta-pose",
     nargs=6,
     type=float,
@@ -40,11 +47,11 @@ from isaaclab.utils.math import compute_pose_error, subtract_frame_transforms
 
 ARM_HOME = {
     "Joint_1": 0.0,
-    "Joint_2": 3.92699082,
-    "Joint_3": 4.10012748,
-    "Joint_4": 0.21956242,
-    "Joint_5": -1.57079633,
-    "Joint_6": -1.57079633,
+    "Joint_2": 0.52359878,
+    "Joint_3": -1.57079633,
+    "Joint_4": 0.0,
+    "Joint_5": 0.0,
+    "Joint_6": 0.0,
 }
 
 
@@ -54,6 +61,7 @@ def pose_errors(ee_pos, ee_quat, goal_pos, goal_quat):
 
 
 def main():
+    arm_home = dict(zip(ARM_HOME, args_cli.arm_joints)) if args_cli.arm_joints else ARM_HOME
     sim = SimulationContext(sim_utils.SimulationCfg(dt=1 / 120, device=args_cli.device))
     robot = Articulation(
         ArticulationCfg(
@@ -62,18 +70,15 @@ def main():
                 usd_path=args_cli.asset,
                 rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=True),
             ),
-            init_state=ArticulationCfg.InitialStateCfg(pos=(0.0, 0.0, args_cli.base_height), joint_pos=ARM_HOME),
+            init_state=ArticulationCfg.InitialStateCfg(pos=(0.0, 0.0, args_cli.base_height), joint_pos=arm_home),
             soft_joint_pos_limit_factor=0.98,
             actuators={
                 "arm": ImplicitActuatorCfg(
                     joint_names_expr=["Joint_[1-6]"],
                     stiffness=1000.0,
                     damping=100.0,
-                    effort_limit_sim=100.0,
+                    effort_limit_sim=20.0,
                     velocity_limit_sim=3.0,
-                ),
-                "gripper_motor_lock": ImplicitActuatorCfg(
-                    joint_names_expr=["Joint_7"], stiffness=100.0, damping=10.0, effort_limit_sim=1.0
                 ),
                 "fingers": ImplicitActuatorCfg(
                     joint_names_expr=["Joint_ee_[12]"], stiffness=500.0, damping=50.0, effort_limit_sim=100.0
@@ -85,7 +90,7 @@ def main():
 
     arm_ids, arm_names = robot.find_joints([f"Joint_{i}" for i in range(1, 7)], preserve_order=True)
     tool_ids, tool_names = robot.find_bodies("Tool")
-    assert arm_names == list(ARM_HOME), arm_names
+    assert arm_names == list(arm_home), arm_names
     assert tool_names == ["Tool"], tool_names
     assert robot.is_fixed_base
     tool_id = tool_ids[0]
@@ -143,10 +148,12 @@ def main():
     assert torch.isfinite(robot.data.joint_pos).all()
     assert torch.all(robot.data.joint_pos[:, arm_ids] >= limits[..., 0])
     assert torch.all(robot.data.joint_pos[:, arm_ids] <= limits[..., 1])
-    assert final_pos_error.item() < initial_pos_error.item() * 0.5, (initial_pos_error, final_pos_error)
-    assert final_rot_error.item() < initial_rot_error.item() * 0.5, (initial_rot_error, final_rot_error)
+    assert final_pos_error.item() < max(initial_pos_error.item() * 0.5, 1e-3), (initial_pos_error, final_pos_error)
+    assert final_rot_error.item() < max(initial_rot_error.item() * 0.5, 1e-3), (initial_rot_error, final_rot_error)
     print(f"arm_joint_names={arm_names}")
     print(f"tool_position_world={tool_pose_w[0, :3].tolist()}")
+    print(f"tool_quaternion_world={tool_pose_w[0, 3:7].tolist()}")
+    print(f"arm_joint_positions={robot.data.joint_pos[0, arm_ids].tolist()}")
     print(f"position_error_m={initial_pos_error.item():.6f}->{final_pos_error.item():.6f}")
     print(f"rotation_error_rad={initial_rot_error.item():.6f}->{final_rot_error.item():.6f}")
     print(f"dls_ik_steps={args_cli.steps}")
