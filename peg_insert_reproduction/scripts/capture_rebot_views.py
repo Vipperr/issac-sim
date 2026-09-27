@@ -34,7 +34,9 @@ import rebot_task  # noqa: E402,F401
 @hydra_task_config(args_cli.task, args_cli.agent)
 def main(env_cfg, _agent_cfg):
     env_cfg.scene.num_envs = 1
-    env_cfg.sim.use_fabric = False
+    env_cfg.scene.replicate_physics = False
+    env_cfg.sim.use_fabric = True
+    env_cfg.scene.clone_in_fabric = False
     env_cfg.viewer.resolution = (1280, 720)
     env = gym.make(args_cli.task, cfg=env_cfg, render_mode="rgb_array")
     env.reset()

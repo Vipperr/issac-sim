@@ -43,10 +43,22 @@ def main():
             ),
             actuators={
                 "arm": ImplicitActuatorCfg(
-                    joint_names_expr=["Joint_[1-6]"], stiffness=0.0, damping=0.0, effort_limit_sim=20.0
+                    joint_names_expr=["Joint_[1-6]"],
+                    stiffness=0.0,
+                    damping=0.0,
+                    friction=2.0,
+                    dynamic_friction=2.0,
+                    viscous_friction=0.2,
+                    effort_limit_sim=50.0,
                 ),
                 "fingers": ImplicitActuatorCfg(
-                    joint_names_expr=["Joint_ee_[12]"], stiffness=500.0, damping=50.0, effort_limit_sim=100.0
+                    joint_names_expr=["Joint_ee_[12]"],
+                    stiffness=500.0,
+                    damping=0.0,
+                    friction=2.0,
+                    dynamic_friction=2.0,
+                    viscous_friction=0.2,
+                    effort_limit_sim=100.0,
                 ),
             },
         )
@@ -62,7 +74,9 @@ def main():
     assert expected_joints <= set(robot.joint_names), robot.joint_names
     assert "Tool" in robot.body_names, robot.body_names
     j2_limits = robot.data.soft_joint_pos_limits[0, robot.joint_names.index("Joint_2")]
-    assert torch.allclose(j2_limits, torch.tensor([0.0, 3.1415926], device=sim.device), atol=1e-5), j2_limits
+    assert torch.allclose(
+        j2_limits, torch.tensor([0.0, 3.141592653589793], device=sim.device), atol=1e-5
+    ), j2_limits
 
     for _ in range(args_cli.steps):
         robot.set_joint_effort_target(torch.zeros_like(robot.data.joint_pos))

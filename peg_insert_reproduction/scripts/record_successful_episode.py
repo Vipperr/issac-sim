@@ -98,16 +98,23 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         agent.init_rnn()
 
     success_reported = False
+    action_norm_sum = 0.0
     for step in range(1, env.unwrapped.max_episode_length + 1):
         with torch.inference_mode():
             actions = agent.get_action(agent.obs_to_torch(obs), is_deterministic=True)
             obs, _, dones, infos = env.step(actions)
+        action_norm_sum += torch.linalg.vector_norm(actions, dim=1).mean().item()
         if not success_reported and bool(infos["logs_rew_curr_success"].item()):
             print(f"first_success_step={step} seconds={step * env.unwrapped.step_dt:.2f}", flush=True)
             success_reported = True
         if bool(dones.item()):
             print(f"timeout_step={step}", flush=True)
             break
+    print(
+        f"mean_action_norm={action_norm_sum / step:.6f} "
+        f"peg_minus_hole={(task.held_pos[0] - task.fixed_pos[0]).tolist()}",
+        flush=True,
+    )
     env.close()
 
 

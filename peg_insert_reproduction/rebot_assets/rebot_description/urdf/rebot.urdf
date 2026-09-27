@@ -191,42 +191,48 @@
     <child link="Link_1"/>
     <origin xyz="0 0 0.08595" rpy="0 0 0"/>
     <axis xyz="0 0 1"/>
-    <limit lower="-1.570796326794897" upper="1.570796326794897" effort="20" velocity="3"/>
+    <limit lower="-1.570796326794897" upper="1.570796326794897" effort="50" velocity="3"/>
+    <dynamics damping="0.2" friction="2.0"/>
   </joint>
   <joint name="Joint_2" type="revolute">
     <parent link="Link_1"/>
     <child link="Link_2"/>
     <origin xyz="0.02000026 0.03562485 0.05755" rpy="1.5707 0 -3.14158531"/>
     <axis xyz="0 0 1"/>
-    <limit lower="0.0" upper="3.1415926" effort="20" velocity="3"/>
+    <limit lower="0.0" upper="3.141592653589793" effort="50" velocity="3"/>
+    <dynamics damping="0.2" friction="2.0"/>
   </joint>
   <joint name="Joint_3" type="revolute">
     <parent link="Link_2"/>
     <child link="Link_3"/>
     <origin xyz="0.264 0 0.00000388" rpy="0.00001469 0.00009633 1.5707"/>
     <axis xyz="0 0 1"/>
-    <limit lower="-3.141592653589793" upper="0.0" effort="20" velocity="3"/>
+    <limit lower="-3.141592653589793" upper="0.0" effort="50" velocity="3"/>
+    <dynamics damping="0.2" friction="2.0"/>
   </joint>
   <joint name="Joint_4" type="revolute">
     <parent link="Link_3"/>
     <child link="Link_4"/>
     <origin xyz="0.05397768 0.24260501 0" rpy="0.00002939 0.00019265 1.5707"/>
     <axis xyz="0 0 1"/>
-    <limit lower="-1.570796326794897" upper="1.570796326794897" effort="20" velocity="3"/>
+    <limit lower="-1.570796326794897" upper="1.570796326794897" effort="50" velocity="3"/>
+    <dynamics damping="0.2" friction="2.0"/>
   </joint>
   <joint name="Joint_5" type="revolute">
     <parent link="Link_4"/>
     <child link="Link_5"/>
     <origin xyz="0.07832057 -0.03549174 -0.03560106" rpy="0 -1.57079633 -1.57060367"/>
     <axis xyz="0 0 1"/>
-    <limit lower="-1.570796326794897" upper="1.570796326794897" effort="20" velocity="3"/>
+    <limit lower="-1.570796326794897" upper="1.570796326794897" effort="50" velocity="3"/>
+    <dynamics damping="0.2" friction="2.0"/>
   </joint>
   <joint name="Joint_6" type="revolute">
     <parent link="Link_5"/>
     <child link="Link_6"/>
     <origin xyz="-0.0000046 0.02349226 0.038" rpy="1.57079633 0.00022208 3.1414294"/>
     <axis xyz="0 0 1"/>
-    <limit lower="-1.570796326794897" upper="1.570796326794897" effort="20" velocity="3"/>
+    <limit lower="-1.570796326794897" upper="1.570796326794897" effort="50" velocity="3"/>
+    <dynamics damping="0.2" friction="2.0"/>
   </joint>
   <joint name="Joint_ee_1" type="prismatic">
     <parent link="Link_6"/>
@@ -238,6 +244,7 @@
       -0.05。齿轮半径 1cm，所以 0.05m 对应夹爪电机转 5rad。
     -->
     <limit lower="0" upper="0.05" effort="100" velocity="0.1"/>
+    <dynamics damping="0.2" friction="2.0"/>
   </joint>
   <joint name="Joint_ee_2" type="prismatic">
     <parent link="Link_6"/>
@@ -245,6 +252,7 @@
     <origin xyz="0.085 -0.0042 0.0858" rpy="1.57079633 0 -1.57079633"/>
     <axis xyz="0 0 -1"/>
     <limit lower="0" upper="0.05" effort="100" velocity="0.1"/>
+    <dynamics damping="0.2" friction="2.0"/>
     <mimic joint="Joint_ee_1" multiplier="1" offset="0"/>
   </joint>
   <joint name="fixed_joint" type="fixed">

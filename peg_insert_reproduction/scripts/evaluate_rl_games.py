@@ -20,6 +20,7 @@ parser.add_argument("--episodes", type=int, default=1024, help="Must be divisibl
 parser.add_argument("--seed", type=int, default=1000, help="Evaluation environment seed.")
 parser.add_argument("--output", help="Optional path for the JSON summary.")
 parser.add_argument("--disable_fabric", action="store_true")
+parser.add_argument("--arm-joints", nargs=6, type=float, metavar=("J1", "J2", "J3", "J4", "J5", "J6"))
 AppLauncher.add_app_launcher_args(parser)
 args_cli, hydra_args = parser.parse_known_args()
 if args_cli.episodes <= 0 or args_cli.episodes % args_cli.num_envs:
@@ -50,6 +51,10 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     env_cfg.scene.num_envs = args_cli.num_envs
     env_cfg.sim.device = args_cli.device if args_cli.device is not None else env_cfg.sim.device
     env_cfg.seed = args_cli.seed if args_cli.seed != -1 else random.randint(0, 10000)
+    if args_cli.arm_joints is not None:
+        arm_joints = [f"Joint_{index}" for index in range(1, 7)]
+        env_cfg.ctrl.reset_joints = args_cli.arm_joints
+        env_cfg.robot.init_state.joint_pos.update(dict(zip(arm_joints, args_cli.arm_joints)))
     agent_cfg["params"]["seed"] = env_cfg.seed
 
     env = gym.make(args_cli.task, cfg=env_cfg)
@@ -79,6 +84,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     agent.reset()
 
     obs = env.reset()
+    task = env.unwrapped
     if isinstance(obs, dict):
         obs = obs["obs"]
     _ = agent.get_batch_size(obs, 1)
@@ -116,6 +122,9 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         "success_rate": successes / completed,
         "mean_first_success_step": success_step_sum / successes if successes else None,
         "mean_first_success_seconds": success_step_sum / successes * env.unwrapped.step_dt if successes else None,
+        "initial_fixed_pos": task.fixed_pos[0].tolist(),
+        "initial_held_pos": task.held_pos[0].tolist(),
+        "reset_arm_joints": args_cli.arm_joints,
     }
     summary_json = json.dumps(summary, sort_keys=True)
     print(summary_json, flush=True)

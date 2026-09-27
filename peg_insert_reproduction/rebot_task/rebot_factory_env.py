@@ -10,6 +10,7 @@ import isaacsim.core.utils.torch as torch_utils
 import isaaclab.sim as sim_utils
 from isaaclab.actuators import ImplicitActuatorCfg
 from isaaclab.assets import ArticulationCfg
+from isaaclab.managers import EventTermCfg, SceneEntityCfg
 from isaaclab.utils import configclass
 from isaaclab.utils.math import axis_angle_from_quat
 from isaaclab_tasks.direct.factory import factory_control, factory_utils
@@ -18,9 +19,56 @@ from isaaclab_tasks.direct.factory.factory_env_cfg import CtrlCfg, FactoryTaskPe
 
 
 ARM_JOINTS = [f"Joint_{index}" for index in range(1, 7)]
-ARM_HOME = [0.000050628, 1.37728642, -0.805942139, 0.999452022, 0.000213108, 0.0]
-REBOT_PEG_TIP_OFFSET_M = 0.055
+# Tool pointing down at x=0.20 m.  Valid for the XML J2 range [0, 180 deg] with
+# >=25 deg margin on every arm joint (the old 60-deg-limit pose left J4 8 deg).
+ARM_HOME = [0.000061041, 1.340906024, -0.903939962, 1.133828998, 0.000241180, -0.000004485]
+REBOT_ARM_EFFORT_LIMIT = 50.0
+# Real-robot joint speed cap, mirrored in rebot.xml <numeric name="rebot_arm_velocity_limit">.
+REBOT_ARM_VELOCITY_LIMIT = 3.0
+# Per-reset joint friction randomization.  The XML nominal is frictionloss=2.0 N*m and
+# damping=0.2 N*m*s/rad.  MuJoCo's soft frictionloss lets joints creep under loads
+# below 2 N*m while PhysX sticks, which matters most for the light wrist joints, so
+# J4-J6 are randomized down to zero.  Static == dynamic because MuJoCo has one value.
+REBOT_JOINT_FRICTION_RANGES = {"Joint_[1-3]": (1.0, 2.0), "Joint_[4-6]": (0.0, 2.0)}
+REBOT_JOINT_VISCOUS_FRICTION_RANGE = (0.1, 0.3)
+REBOT_PEG_TIP_OFFSET_M = 0.075
 REBOT_USD = str(Path(__file__).resolve().parents[1] / "rebot_assets/rebot.usd")
+
+
+def randomize_arm_joint_friction(env, env_ids, asset_cfg: SceneEntityCfg, friction_ranges, viscous_range):
+    """Resample static/dynamic (Coulomb) and viscous joint friction for the reset envs."""
+    robot = env.scene[asset_cfg.name]
+    if env_ids is None:
+        env_ids = torch.arange(env.scene.num_envs, device=robot.device)
+    joint_ids, coulomb_bounds = [], []
+    for expr, bounds in friction_ranges.items():
+        ids, _ = robot.find_joints(expr)
+        joint_ids += ids
+        coulomb_bounds += [bounds] * len(ids)
+    low, high = torch.tensor(coulomb_bounds, device=robot.device).T
+    shape = (len(env_ids), len(joint_ids))
+    coulomb = low + (high - low) * torch.rand(shape, device=robot.device)
+    viscous = torch.empty(shape, device=robot.device).uniform_(*viscous_range)
+    robot.write_joint_friction_coefficient_to_sim(
+        joint_friction_coeff=coulomb,
+        joint_dynamic_friction_coeff=coulomb,
+        joint_viscous_friction_coeff=viscous,
+        joint_ids=joint_ids,
+        env_ids=env_ids,
+    )
+
+
+@configclass
+class RebotEventCfg:
+    arm_joint_friction = EventTermCfg(
+        func=randomize_arm_joint_friction,
+        mode="reset",
+        params={
+            "asset_cfg": SceneEntityCfg("robot"),
+            "friction_ranges": REBOT_JOINT_FRICTION_RANGES,
+            "viscous_range": REBOT_JOINT_VISCOUS_FRICTION_RANGE,
+        },
+    )
 
 
 @configclass
@@ -32,13 +80,14 @@ class RebotCtrlCfg(CtrlCfg):
 @configclass
 class RebotFactoryPegInsertCfg(FactoryTaskPegInsertCfg):
     ctrl = RebotCtrlCfg()
+    events = RebotEventCfg()
     robot = ArticulationCfg(
         prim_path="/World/envs/env_.*/Robot",
         spawn=sim_utils.UsdFileCfg(
             usd_path=REBOT_USD,
             activate_contact_sensors=True,
             rigid_props=sim_utils.RigidBodyPropertiesCfg(
-                disable_gravity=True,
+                disable_gravity=False,
                 max_depenetration_velocity=5.0,
                 linear_damping=0.0,
                 angular_damping=0.0,
@@ -50,7 +99,7 @@ class RebotFactoryPegInsertCfg(FactoryTaskPegInsertCfg):
                 max_contact_impulse=1e32,
             ),
             articulation_props=sim_utils.ArticulationRootPropertiesCfg(
-                enabled_self_collisions=False,
+                enabled_self_collisions=True,
                 solver_position_iteration_count=192,
                 solver_velocity_iteration_count=1,
             ),
@@ -64,15 +113,20 @@ class RebotFactoryPegInsertCfg(FactoryTaskPegInsertCfg):
                 joint_names_expr=ARM_JOINTS,
                 stiffness=0.0,
                 damping=0.0,
-                friction=0.0,
+                friction=2.0,
+                dynamic_friction=2.0,
+                viscous_friction=0.2,
                 armature=0.0,
-                effort_limit_sim=20.0,
-                velocity_limit_sim=3.0,
+                effort_limit_sim=REBOT_ARM_EFFORT_LIMIT,
+                velocity_limit_sim=REBOT_ARM_VELOCITY_LIMIT,
             ),
             "fingers": ImplicitActuatorCfg(
                 joint_names_expr=["Joint_ee_[12]"],
                 stiffness=500.0,
-                damping=50.0,
+                damping=0.0,
+                friction=2.0,
+                dynamic_friction=2.0,
+                viscous_friction=0.2,
                 effort_limit_sim=100.0,
                 velocity_limit_sim=0.1,
             ),
@@ -181,7 +235,9 @@ class RebotFactoryEnv(FactoryEnv):
         )
         arm_torque = (self.fingertip_midpoint_jacobian.transpose(1, 2) @ self.applied_wrench.unsqueeze(-1)).squeeze(-1)
         self.joint_torque = torch.zeros_like(self.joint_pos)
-        self.joint_torque[:, self.arm_joint_ids] = torch.clamp(arm_torque, -20.0, 20.0)
+        self.joint_torque[:, self.arm_joint_ids] = torch.clamp(
+            arm_torque, -REBOT_ARM_EFFORT_LIMIT, REBOT_ARM_EFFORT_LIMIT
+        )
         self.ctrl_target_joint_pos[:, self.finger_joint_ids] = ctrl_target_gripper_dof_pos
         self._robot.set_joint_position_target(self.ctrl_target_joint_pos)
         self._robot.set_joint_effort_target(self.joint_torque)
