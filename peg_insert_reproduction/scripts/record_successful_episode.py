@@ -2,6 +2,7 @@
 """Record one complete deterministic Factory episode."""
 
 import argparse
+import json
 import math
 import sys
 from pathlib import Path
@@ -15,6 +16,7 @@ parser.add_argument("--task", default="Isaac-Factory-PegInsert-Direct-v0")
 parser.add_argument("--agent", default="rl_games_cfg_entry_point")
 parser.add_argument("--seed", type=int, default=1000)
 parser.add_argument("--video_folder", required=True)
+parser.add_argument("--action_output")
 parser.add_argument("--disable_fabric", action="store_true")
 AppLauncher.add_app_launcher_args(parser)
 args_cli, hydra_args = parser.parse_known_args()
@@ -98,15 +100,30 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         agent.init_rnn()
 
     success_reported = False
+    first_success_step = None
     action_norm_sum = 0.0
+    raw_action_history = []
+    ema_action_history = []
+    fingertip_position_history = []
+    fingertip_quaternion_history = []
+    initial_fingertip_position = task.fingertip_midpoint_pos[0].detach().cpu().tolist()
+    initial_fingertip_quaternion = task.fingertip_midpoint_quat[0].detach().cpu().tolist()
     for step in range(1, env.unwrapped.max_episode_length + 1):
         with torch.inference_mode():
             actions = agent.get_action(agent.obs_to_torch(obs), is_deterministic=True)
+            raw_action_history.append(actions[0].detach().cpu().tolist())
+            ema_actions = task.ema_factor * actions + (1 - task.ema_factor) * task.actions
+            ema_action_history.append(ema_actions[0].detach().cpu().tolist())
             obs, _, dones, infos = env.step(actions)
+        if not bool(dones.item()):
+            assert torch.allclose(task.actions, ema_actions, atol=1e-6)
+        fingertip_position_history.append(task.fingertip_midpoint_pos[0].detach().cpu().tolist())
+        fingertip_quaternion_history.append(task.fingertip_midpoint_quat[0].detach().cpu().tolist())
         action_norm_sum += torch.linalg.vector_norm(actions, dim=1).mean().item()
         if not success_reported and bool(infos["logs_rew_curr_success"].item()):
             print(f"first_success_step={step} seconds={step * env.unwrapped.step_dt:.2f}", flush=True)
             success_reported = True
+            first_success_step = step
         if bool(dones.item()):
             print(f"timeout_step={step}", flush=True)
             break
@@ -115,6 +132,33 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         f"peg_minus_hole={(task.held_pos[0] - task.fixed_pos[0]).tolist()}",
         flush=True,
     )
+    assert len(raw_action_history) == len(ema_action_history) == len(fingertip_position_history) == len(
+        fingertip_quaternion_history
+    ) == step
+    if args_cli.action_output:
+        output = Path(args_cli.action_output)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(
+            json.dumps(
+                {
+                    "checkpoint": checkpoint,
+                    "seed": args_cli.seed,
+                    "deterministic": True,
+                    "action_kind": "raw_policy_output_pre_ema",
+                    "control_dt_seconds": env.unwrapped.step_dt,
+                    "first_success_step": first_success_step,
+                    "sample_timing": "raw_and_ema_action_pre_step; pose_post_step",
+                    "initial_fingertip_position": initial_fingertip_position,
+                    "initial_fingertip_quaternion_wxyz": initial_fingertip_quaternion,
+                    "raw_actions": raw_action_history,
+                    "ema_actions": ema_action_history,
+                    "fingertip_positions": fingertip_position_history,
+                    "fingertip_quaternions_wxyz": fingertip_quaternion_history,
+                },
+                indent=2,
+            )
+            + "\n"
+        )
     env.close()
 
 

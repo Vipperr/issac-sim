@@ -4,3 +4,19 @@
 peg_insert_reproduction/archive/
 __pycache__/
 *.py[cod]
+
+# Large experiment artifacts, kept in the cloud backup instead of Git.
+# cloud_sync/ holds 204 MB checkpoints, above GitHub's 100 MB per-file limit.
+peg_insert_reproduction/cloud_sync/
+peg_insert_reproduction/videos/
+peg_insert_reproduction/eval_results/
+peg_insert_reproduction/logs/
+peg_insert_reproduction/training_logs/
+peg_insert_reproduction/factory_collision_sources/
+
+# UrdfConverter output; the source meshes and URDF stay tracked in rebot_description/.
+peg_insert_reproduction/rebot_assets/.asset_hash
+peg_insert_reproduction/rebot_assets/backups/
+peg_insert_reproduction/rebot_assets/config.yaml
+peg_insert_reproduction/rebot_assets/configuration/
+peg_insert_reproduction/rebot_assets/rebot.usd

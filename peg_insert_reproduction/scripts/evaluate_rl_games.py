@@ -5,6 +5,7 @@ import argparse
 import json
 import math
 import random
+import statistics
 import sys
 from pathlib import Path
 
@@ -93,13 +94,21 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
 
     completed = successes = 0
     success_step_sum = 0.0
+    episode_returns = []
+    running_returns = None
     while completed < args_cli.episodes:
         with torch.inference_mode():
             actions = agent.get_action(agent.obs_to_torch(obs), is_deterministic=True)
-            obs, _, dones, infos = env.step(actions)
+            obs, rewards, dones, infos = env.step(actions)
+        rewards = rewards.reshape(args_cli.num_envs, -1).sum(dim=1)
+        if running_returns is None:
+            running_returns = torch.zeros_like(rewards)
+        running_returns += rewards
         if torch.any(dones):
             if not torch.all(dones):
                 raise RuntimeError("Factory episodes are expected to terminate synchronously")
+            episode_returns.extend(running_returns.detach().cpu().tolist())
+            running_returns.zero_()
             success_count = round(float(infos["successes"]) * args_cli.num_envs)
             successes += success_count
             if success_count:
@@ -118,6 +127,9 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         "eval_seed": env_cfg.seed,
         "num_envs": args_cli.num_envs,
         "episodes": completed,
+        "episode_returns": episode_returns,
+        "mean_eval_return": statistics.fmean(episode_returns),
+        "std_eval_return": statistics.pstdev(episode_returns),
         "successes": successes,
         "success_rate": successes / completed,
         "mean_first_success_step": success_step_sum / successes if successes else None,

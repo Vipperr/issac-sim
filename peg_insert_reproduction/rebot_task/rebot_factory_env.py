@@ -17,6 +17,8 @@ from isaaclab_tasks.direct.factory import factory_control, factory_utils
 from isaaclab_tasks.direct.factory.factory_env import FactoryEnv
 from isaaclab_tasks.direct.factory.factory_env_cfg import CtrlCfg, FactoryTaskPegInsertCfg
 
+from .rebot_gravity import gravity_torque
+
 
 ARM_JOINTS = [f"Joint_{index}" for index in range(1, 7)]
 # Tool pointing down at x=0.20 m.  Valid for the XML J2 range [0, 180 deg] with
@@ -79,6 +81,7 @@ class RebotCtrlCfg(CtrlCfg):
 
 @configclass
 class RebotFactoryPegInsertCfg(FactoryTaskPegInsertCfg):
+    episode_length_s = 20.0
     ctrl = RebotCtrlCfg()
     events = RebotEventCfg()
     robot = ArticulationCfg(
@@ -234,6 +237,7 @@ class RebotFactoryEnv(FactoryEnv):
             self.task_deriv_gains,
         )
         arm_torque = (self.fingertip_midpoint_jacobian.transpose(1, 2) @ self.applied_wrench.unsqueeze(-1)).squeeze(-1)
+        arm_torque += gravity_torque(self.joint_pos[:, self.arm_joint_ids])
         self.joint_torque = torch.zeros_like(self.joint_pos)
         self.joint_torque[:, self.arm_joint_ids] = torch.clamp(
             arm_torque, -REBOT_ARM_EFFORT_LIMIT, REBOT_ARM_EFFORT_LIMIT
@@ -343,6 +347,7 @@ class RebotFactoryEnv(FactoryEnv):
         self._held_asset.reset(env_ids)
         self.step_sim_no_action()
 
+        physics.set_gravity(carb.Float3(*self.cfg.sim.gravity))
         self.task_prop_gains = self.default_gains
         self.task_deriv_gains = factory_utils.get_deriv_gains(self.default_gains)
         for _ in range(int(0.25 / self.physics_dt)):
@@ -359,4 +364,3 @@ class RebotFactoryEnv(FactoryEnv):
         self.prev_actions = torch.zeros_like(self.actions)
         self.ee_angvel_fd.zero_()
         self.ee_linvel_fd.zero_()
-        physics.set_gravity(carb.Float3(*self.cfg.sim.gravity))

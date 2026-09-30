@@ -1,6 +1,6 @@
 # Isaac Factory PegInsert 官方 PPO Baseline 复现报告
 
-**完成日期：** 2026-09-02（Asia/Shanghai）
+**完成日期：** 2026-09-02（Asia/Shanghai）  
 **任务：** `Isaac-Factory-PegInsert-Direct-v0`
 
 ## 结论
