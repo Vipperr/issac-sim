@@ -12,11 +12,9 @@ peg_insert_reproduction/videos/
 peg_insert_reproduction/eval_results/
 peg_insert_reproduction/logs/
 peg_insert_reproduction/training_logs/
-peg_insert_reproduction/factory_collision_sources/
 
-# UrdfConverter output; the source meshes and URDF stay tracked in rebot_description/.
-peg_insert_reproduction/rebot_assets/.asset_hash
-peg_insert_reproduction/rebot_assets/backups/
-peg_insert_reproduction/rebot_assets/config.yaml
-peg_insert_reproduction/rebot_assets/configuration/
-peg_insert_reproduction/rebot_assets/rebot.usd
+# The USD assets stay tracked: rebot_assets/ holds the UrdfConverter output
+# (converted on a remote host) and factory_collision_sources/ holds the SDF
+# surfaces that export_factory_collision.py consumes. Both are inputs this
+# repository cannot regenerate without the cloud machine.
+
